@@ -32,6 +32,11 @@ module "pypiserver" {
   task_min_count = null # Auto = min(RAM limit, CPU limit) × instances = 12
   task_max_count = null # Auto = 2 × task_min_count = 24
 
+  # A second user with its own secret, to test additional_users end to end
+  additional_users = {
+    "test-reader" = {}
+  }
+
   access_log_force_destroy = true
   backups_force_destroy    = true
 

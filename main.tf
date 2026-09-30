@@ -124,11 +124,7 @@ module "pypiserver" {
   extra_files = concat(
     [
       {
-        content = format(
-          "%s:%s",
-          jsondecode(module.pypiserver_secret.secret_value)["username"],
-          jsondecode(module.pypiserver_secret.secret_value)["bcrypt_hash"]
-        )
+        content     = local.htpasswd_content
         path        = "/etc/htpasswd"
         permissions = "644"
       },

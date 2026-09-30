@@ -100,3 +100,8 @@ output "cloudwatch_dashboard_url" {
     "https://console.aws.amazon.com/cloudwatch/home?region=${data.aws_region.current.name}#dashboards:name=${aws_cloudwatch_dashboard.pypiserver[0].dashboard_name}"
   ) : null
 }
+
+output "additional_user_secret_arns" {
+  description = "Map of additional username to the ARN of the Secrets Manager secret holding its credentials."
+  value       = { for username, secret in module.additional_user_secret : username => secret.secret_arn }
+}

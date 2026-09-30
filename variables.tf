@@ -676,3 +676,40 @@ variable "gunicorn_workers" {
     error_message = "Gunicorn workers must be between 1 and 16 or null for auto-calculation."
   }
 }
+
+variable "additional_users" {
+  description = <<-EOT
+    Additional basic-auth users, keyed by username. Each user gets a generated password stored in
+    its own Secrets Manager secret (name prefix PYPISERVER_<username>_), readable by secret_readers.
+    Use it to give a consumer (e.g. a dependency-update bot) a credential that can be rotated or
+    revoked on its own. Note: pypiserver has no per-user permissions, so every user can upload.
+    Restrict an individual user at the load balancer if it must be read-only.
+  EOT
+  type = map(
+    object(
+      {
+        secret_readers = optional(list(string))
+      }
+    )
+  )
+  default = {}
+
+  validation {
+    condition = alltrue([
+      for username in keys(var.additional_users) : can(regex("^[A-Za-z0-9._-]{1,64}$", username))
+    ])
+    error_message = <<-EOT
+      additional_users keys must be 1-64 characters of letters, digits, '.', '_' or '-'
+      (no ':' or whitespace, which htpasswd and basic auth cannot represent).
+    EOT
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for user in values(var.additional_users) : [
+        for arn in coalesce(user.secret_readers, []) : can(regex("^arn:aws:iam::[0-9]{12}:role/.+$", arn))
+      ]
+    ]))
+    error_message = "All additional_users secret_readers must be valid IAM role ARNs."
+  }
+}

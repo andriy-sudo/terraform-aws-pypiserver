@@ -192,7 +192,44 @@ def _wait_for_server_ready(
             time.sleep(1)  # Poll every second
 
 
-def _validate_pypi_functionality(tf_output: dict):
+def _validate_additional_user(
+    pypi_url: str,
+    secret_arn: str,
+    package_name: str,
+    version: str,
+    secretsmanager_client,
+) -> None:
+    """
+    Verify an additional user can read the index with the credentials from its own secret.
+
+    :param pypi_url: PyPI server URL
+    :param secret_arn: ARN of the additional user's credentials secret
+    :param package_name: Package uploaded earlier by the primary user
+    :param version: Version uploaded earlier by the primary user
+    :param secretsmanager_client: boto3 Secrets Manager client
+    """
+    credentials = json.loads(
+        secretsmanager_client.get_secret_value(SecretId=secret_arn)["SecretString"]
+    )
+    assert _verify_package_exists(
+        pypi_url,
+        credentials["username"],
+        credentials["password"],
+        package_name,
+        version,
+    )
+    response = requests.get(
+        f"{pypi_url}/simple/{package_name}/",
+        auth=(credentials["username"], "wrong-password"),
+        timeout=30,
+    )
+    assert response.status_code == 401, f"Expected 401, got {response.status_code}"
+    LOG.info(
+        f"✓ Additional user {credentials['username']} authenticates via its own secret"
+    )
+
+
+def _validate_pypi_functionality(tf_output: dict, secretsmanager_client=None):
     """Validate PyPI server by uploading, downloading, and installing a test package."""
     LOG.info("=" * 70)
     LOG.info("VALIDATING PYPI SERVER FUNCTIONALITY")
@@ -235,6 +272,19 @@ def _validate_pypi_functionality(tf_output: dict):
         assert _install_and_test_package(
             pypi_url, username, password, test_package, test_version
         )
+
+        # Step 4: Additional users read the index with their own credentials
+        if secretsmanager_client is not None:
+            for secret_arn in tf_output["additional_user_secret_arns"][
+                "value"
+            ].values():
+                _validate_additional_user(
+                    pypi_url,
+                    secret_arn,
+                    test_package,
+                    test_version,
+                    secretsmanager_client,
+                )
 
         LOG.info("\n" + "=" * 70)
         LOG.info("✓ ALL VALIDATION TESTS PASSED")
@@ -331,7 +381,10 @@ def test_module(
         )
 
         # Validation: Test package upload/download/install
-        _validate_pypi_functionality(tf_pypiserver_output)
+        _validate_pypi_functionality(
+            tf_pypiserver_output,
+            boto3_session.client("secretsmanager", region_name=aws_region),
+        )
 
         # Log capacity calculation info
         capacity_info = tf_pypiserver_output["capacity_info"]["value"]

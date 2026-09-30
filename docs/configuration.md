@@ -233,6 +233,24 @@ secret_readers = [
 ]
 ```
 
+### `additional_users`
+
+Extra basic-auth users, keyed by username. Each gets a generated password in its own
+Secrets Manager secret (`PYPISERVER_<username>_*`), readable by its own `secret_readers`,
+so it can be rotated or revoked without touching the primary credential. The ARNs are
+exported as `additional_user_secret_arns`.
+
+```hcl
+additional_users = {
+  "dependabot" = {
+    secret_readers = ["arn:aws:iam::123456789012:role/github-control"]
+  }
+}
+```
+
+pypiserver has no per-user permissions: every user can upload. To make a user read-only,
+deny its non-GET requests at the load balancer (see `pypi_load_balancer_arn`).
+
 ### `users`
 
 SSH users for debugging EC2 instances (optional).

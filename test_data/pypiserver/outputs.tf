@@ -49,3 +49,8 @@ output "cloudwatch_dashboard_url" {
   description = "URL to the CloudWatch dashboard for monitoring PyPI server metrics."
   value       = module.pypiserver.cloudwatch_dashboard_url
 }
+
+output "additional_user_secret_arns" {
+  description = "Map of additional username to the ARN of its credentials secret."
+  value       = module.pypiserver.additional_user_secret_arns
+}

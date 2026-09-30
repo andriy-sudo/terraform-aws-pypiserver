@@ -656,6 +656,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 | Name | Source | Version |
 |------|--------|---------|
+| <a name="module_additional_user_secret"></a> [additional\_user\_secret](#module\_additional\_user\_secret) | registry.infrahouse.com/infrahouse/secret/aws | 1.3.0 |
 | <a name="module_pypiserver"></a> [pypiserver](#module\_pypiserver) | registry.infrahouse.com/infrahouse/ecs/aws | 8.3.1 |
 | <a name="module_pypiserver_secret"></a> [pypiserver\_secret](#module\_pypiserver\_secret) | registry.infrahouse.com/infrahouse/secret/aws | 1.3.0 |
 
@@ -679,6 +680,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 | [aws_sns_topic_subscription.alarm_emails](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sns_topic_subscription) | resource |
 | [aws_vpc_security_group_ingress_rule.efs](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
 | [aws_vpc_security_group_ingress_rule.efs_icmp](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
+| [random_password.additional](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
 | [random_password.password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
 | [random_pet.username](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/pet) | resource |
 | [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
@@ -697,6 +699,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_access_log_force_destroy"></a> [access\_log\_force\_destroy](#input\_access\_log\_force\_destroy) | Force destroy the S3 bucket containing access logs even if it's not empty.<br/>Should be set to true in test environments to allow clean teardown. | `bool` | `false` | no |
+| <a name="input_additional_users"></a> [additional\_users](#input\_additional\_users) | Additional basic-auth users, keyed by username. Each user gets a generated password stored in<br/>its own Secrets Manager secret (name prefix PYPISERVER\_<username>\_), readable by secret\_readers.<br/>Use it to give a consumer (e.g. a dependency-update bot) a credential that can be rotated or<br/>revoked on its own. Note: pypiserver has no per-user permissions, so every user can upload.<br/>Restrict an individual user at the load balancer if it must be read-only. | <pre>map(<br/>    object(<br/>      {<br/>        secret_readers = optional(list(string))<br/>      }<br/>    )<br/>  )</pre> | `{}` | no |
 | <a name="input_alarm_emails"></a> [alarm\_emails](#input\_alarm\_emails) | List of email addresses to receive alarm notifications.<br/>AWS will send confirmation emails that must be accepted.<br/>At least one email is required for CloudWatch alarm notifications. | `list(string)` | n/a | yes |
 | <a name="input_alarm_topic_arns"></a> [alarm\_topic\_arns](#input\_alarm\_topic\_arns) | List of existing SNS topic ARNs to send alarms to.<br/>Useful for advanced integrations like PagerDuty, Slack, etc.<br/>These are in addition to the email notifications. | `list(string)` | `[]` | no |
 | <a name="input_ami_id"></a> [ami\_id](#input\_ami\_id) | AMI ID for EC2 instances in the Auto Scaling Group.<br/>If not specified, the latest Amazon Linux 2023 image will be used. | `string` | `null` | no |
@@ -736,6 +739,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 | Name | Description |
 |------|-------------|
+| <a name="output_additional_user_secret_arns"></a> [additional\_user\_secret\_arns](#output\_additional\_user\_secret\_arns) | Map of additional username to the ARN of the Secrets Manager secret holding its credentials. |
 | <a name="output_asg_name"></a> [asg\_name](#output\_asg\_name) | Name of the Auto Scaling Group for ECS container instances. |
 | <a name="output_capacity_info"></a> [capacity\_info](#output\_capacity\_info) | Information about instance capacity and task packing. |
 | <a name="output_cloudwatch_alarm_arns"></a> [cloudwatch\_alarm\_arns](#output\_cloudwatch\_alarm\_arns) | ARNs of CloudWatch alarms created for EFS monitoring. |
